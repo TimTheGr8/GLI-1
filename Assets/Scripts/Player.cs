@@ -5,15 +5,8 @@ using UnityEngine.InputSystem;
 
 public class Player : MonoBehaviour
 {
-    // User Input
-    // Left Mouse click
-
-    // Fire Raycast from main camera or mouse posisition
-    // Access the object that was hit
-    // Change color
-
-    private Ray _ray;
-    private RaycastHit _hit;
+    private Ray _rayOrigin;
+    private RaycastHit _hitInfo;
 
     private void Update()
     {
@@ -24,12 +17,13 @@ public class Player : MonoBehaviour
     {
         if (Mouse.current.leftButton.wasPressedThisFrame)
         {
-            _ray = Camera.main.ScreenPointToRay(Input.mousePosition);
-            Debug.DrawRay(_ray.origin, _ray.direction * 1000, Color.green);
-            if (Physics.Raycast(_ray, out _hit))
+            Vector2 mousePos = Mouse.current.position.ReadValue();
+            _rayOrigin = Camera.main.ScreenPointToRay(mousePos);
+            if (Physics.Raycast(_rayOrigin, out _hitInfo))
             {
-                if (_hit.collider != null)
-                    _hit.collider.GetComponent<Renderer>().material.color = Random.ColorHSV();
+                var hitObjectRenderer = _hitInfo.collider.GetComponent<Renderer>();
+                if (hitObjectRenderer != null)
+                    hitObjectRenderer.material.color = Random.ColorHSV();
             }
         }
     }
