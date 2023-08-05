@@ -23,7 +23,10 @@ public class Player : MonoBehaviour
             {
                 var hitObjectRenderer = _hitInfo.collider.GetComponent<Renderer>();
                 if (hitObjectRenderer != null)
-                    hitObjectRenderer.material.color = Random.ColorHSV();
+                    if (_hitInfo.collider.tag == "Random Color")
+                        hitObjectRenderer.material.color = Random.ColorHSV();
+                    else if (_hitInfo.collider.tag == "Black")
+                        hitObjectRenderer.material.color = Color.black;
             }
         }
     }
