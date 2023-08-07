@@ -2,15 +2,27 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.AI;
+using UnityEngine.InputSystem;
 
 public class AI : MonoBehaviour
 {
+    private enum AIState
+    {
+        Walking,
+        Attacking,
+        Jumping,
+        Death
+    }
+
     [SerializeField]
     private List<Transform> _waypoints = new List<Transform>();
+    [SerializeField]
+    private AIState _currentState;
 
-    private Transform _destination;
     private NavMeshAgent _agent;
-    private bool _isAtTarget = false;
+    private int _currentIndex = 0;
+    private bool _increaseIndex = true;
+    private bool _attacking = false;
 
     void Start()
     {
@@ -18,23 +30,79 @@ public class AI : MonoBehaviour
         if (_agent == null)
             Debug.Log("There is no Nav Mesh Agent");
 
-        _destination = _waypoints[0];
-        _agent.destination = _destination.position;
+        _agent.SetDestination(_waypoints[_currentIndex].position);
     }
 
     void Update()
     {
-        if(Vector3.Distance(_agent.destination, transform.position) < 1f)
+        if (Keyboard.current.eKey.wasPressedThisFrame)
         {
-            _destination = _waypoints[RandomWaypoint()];
-            _agent.destination = _destination.position;
+            _currentState = AIState.Jumping;
+            _agent.isStopped = true;
+        }
+        switch (_currentState)
+        {
+            case AIState.Walking:
+                CalculateMovement();
+                break;
+            case AIState.Attacking:
+                if (!_attacking)
+                {
+                    StartCoroutine(AttackDelay());
+                    _attacking = true;
+                }
+                Debug.Log("Attacking");
+                break;
+            case AIState.Jumping:
+                Debug.Log("I am Jumping");
+                break;
+            case AIState.Death:
+                break;
         }
     }
 
-    private int RandomWaypoint()
+    private void CalculateMovement()
     {
-        int randInt = Random.Range(0, _waypoints.Count);
+        if (_agent.remainingDistance < 0.5f)
+        {
+            if (_increaseIndex)
+                IncreaseWaypoint();
+            else
+                DecreaseWaypoint();
 
-        return randInt;
+            _agent.SetDestination(_waypoints[_currentIndex].position);
+            _currentState = AIState.Attacking;
+        }
+    }
+
+    private void IncreaseWaypoint()
+    {
+        if (_currentIndex == _waypoints.Count - 1)
+        {
+            _increaseIndex = false;
+            _currentIndex--;
+        }
+        else
+            _currentIndex++;
+    }
+
+    private void DecreaseWaypoint()
+    {
+        if(_currentIndex == 0)
+        {
+            _increaseIndex = true;
+            _currentIndex++;
+        }
+        else
+            _currentIndex--;
+    }
+
+    IEnumerator AttackDelay()
+    {
+        _agent.isStopped = true;
+        yield return new WaitForSeconds(1.0f);
+        _currentState = AIState.Walking;
+        _agent.isStopped = false;
+        _attacking = false;
     }
 }
